@@ -1,9 +1,9 @@
 import pygame
-from tile import Tile
+from tile import Tile, StaticTile, Crate, AnimatedTile, Coin, Palm
 from settings import tile_size, screen_width
 from player import Player
 from particle import ParticleEffect
-from support import import_csv_layout
+from support import import_csv_layout, import_cut_graphics
 
 
 class Level:
@@ -12,7 +12,7 @@ class Level:
         # Level setup
         self.display_surface = surface
         self.setup_level(level_data)
-        self.world_shift = 0
+        self.world_shift = -1
         self.current_x = 0
 
         # Dust
@@ -24,8 +24,39 @@ class Level:
         self.terrain_sprites = self.create_tile_group(
             terrain_layout, 'terrain')
 
+        # Grass setup
+        grass_layout = import_csv_layout(level_data["grass"])
+        self.grass_sprites = self.create_tile_group(
+            grass_layout, 'grass')
+
+        # Crate setup
+        crate_layout = import_csv_layout(level_data["crates"])
+        self.crate_sprites = self.create_tile_group(
+            crate_layout, 'crates')
+
+        # Coins
+        coin_layout = import_csv_layout(level_data["coins"])
+        self.coin_sprites = self.create_tile_group(
+            coin_layout, 'coins')
+
+        # Foreground palms
+        fg_palm_layout = import_csv_layout(level_data["fg palms"])
+        self.fg_palm_sprites = self.create_tile_group(
+            fg_palm_layout, 'fg palms')
+
+        bg_palm_layout = import_csv_layout(level_data["bg palms"])
+        self.bg_palm_sprites = self.create_tile_group(
+            bg_palm_layout, 'bg palms')
+
     # Setup level graphs
+
     def create_tile_group(self, layout, type):
+        # Import cut graphs
+        terrain_tile_list = import_cut_graphics(
+            'D:\\python\\pygame_pirate\\2D-Mario-style-platformer\\2 - Level\\2 - Level\\graphics\\terrain\\terrain_tiles.png')
+        grass_tile_list = import_cut_graphics(
+            'D:\\python\\pygame_pirate\\2D-Mario-style-platformer\\2 - Level\\2 - Level\\graphics\\decoration\\grass\\grass.png')
+
         sprite_group = pygame.sprite.Group()
         for row_index, row in enumerate(layout):
             for col_index, val in enumerate(row):
@@ -34,8 +65,37 @@ class Level:
                     y = row_index * tile_size
 
                     if type == 'terrain':
-                        sprite = Tile([x, y], tile_size)
-                        sprite_group.add(sprite)
+                        tile_surface = terrain_tile_list[int(val)]
+                        sprite = StaticTile(tile_size, x, y, tile_surface)
+
+                    elif type == 'grass':
+                        tile_surface = grass_tile_list[int(val)]
+                        sprite = StaticTile(tile_size, x, y, tile_surface)
+
+                    elif type == 'crates':
+                        sprite = Crate(tile_size, x, y)
+
+                    elif type == 'coins':
+                        if val == '0':
+                            sprite = Coin(
+                                tile_size, x, y, "D:\\python\\pygame_pirate\\2-level\\graphics\\coins\\gold")
+                        if val == '1':
+                            sprite = Coin(
+                                tile_size, x, y, "D:\\python\\pygame_pirate\\2-level\\graphics\\coins\\silver")
+
+                    elif type == 'fg palms':
+                        if val == '0':
+                            sprite = Palm(
+                                tile_size, x, y, "D:\\python\\pygame_pirate\\2-level\\graphics\\terrain\\palm_small", 38)
+                        elif val == '1':
+                            sprite = Palm(
+                                tile_size, x, y, "D:\\python\\pygame_pirate\\2-level\\graphics\\terrain\\palm_large", 64)
+
+                    elif type == 'bg palms':
+                        sprite = Palm(
+                            tile_size, x, y, "D:\\python\\pygame_pirate\\2-level\\graphics\\terrain\\palm_bg", 38)
+
+                    sprite_group.add(sprite)
 
         return sprite_group
 
@@ -153,5 +213,29 @@ class Level:
         # self.get_player_on_ground()
         # self.vertical_movement_collision()
         # self.create_landing_dust()
+
+        # Create palm
+        self.fg_palm_sprites.draw(self.display_surface)
+        self.fg_palm_sprites.update(self.world_shift)
+
+        # Create palm bg
+        self.bg_palm_sprites.draw(self.display_surface)
+        self.bg_palm_sprites.update(self.world_shift)
+
+        # Draw terrain layout
         self.terrain_sprites.draw(self.display_surface)
+        self.terrain_sprites.update(self.world_shift)
+
+        # Crate grass
+        self.crate_sprites.draw(self.display_surface)
+        self.crate_sprites.update(self.world_shift)
+
+        # Draw grass
+        self.grass_sprites.draw(self.display_surface)
+        self.grass_sprites.update(self.world_shift)
+
+        # Create coin
+        self.coin_sprites.draw(self.display_surface)
+        self.coin_sprites.update(self.world_shift)
+
         self.player.draw(self.display_surface)
